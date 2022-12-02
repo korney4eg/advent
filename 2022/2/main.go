@@ -19,6 +19,8 @@ var ourMap = []map[string]string{
 	map[string]string{"Y": rockSign, "Z": paperSign, "X": scisorsSign},
 }
 
+var winMap = map[string]string{"X": string(losePoints), "Y": string(drawPoints), "Z": string(winPoints)}
+
 const (
 	rockSign    = "r"
 	paperSign   = "p"
@@ -34,7 +36,7 @@ const (
 )
 
 func main() {
-	file, err := os.Open("test.txt")
+	file, err := os.Open("input.txt")
 
 	if err != nil {
 		log.Fatalf("failed to open")
@@ -50,20 +52,16 @@ func main() {
 		line := scanner.Text()
 		linesList = append(linesList, line)
 	}
-	sums := make([]int, len(linesList))
 
-	for i, strategy := range ourMap {
-		fmt.Println(i)
-		total := 0
-		for _, line := range linesList {
-			enemyChoice := strings.Split(line, " ")[0]
-			ourChoice := strings.Split(line, " ")[1]
-			sum := GetRoundPoints(enemyMap[enemyChoice], strategy[ourChoice])
-			total += sum
-			sums = append(sums, sum)
-		}
-		fmt.Printf("total = %d\n", total)
+	total := 0
+	for _, line := range linesList {
+		enemyChoice := strings.Split(line, " ")[0]
+		ourWinChoice := strings.Split(line, " ")[1]
+		ourChoice := GetOurChose(enemyChoice, ourWinChoice)
+		sum := GetRoundPoints(enemyMap[enemyChoice], ourChoice)
+		total += sum
 	}
+	fmt.Printf("total = %d\n", total)
 
 }
 
@@ -91,4 +89,24 @@ func GetVictoryPoints(enemySign, ourSign string) int {
 	}
 	return 0
 
+}
+func GetOurChose(enemySign string, ourPoints string) string {
+	if ourPoints == "Y" {
+		return enemyMap[enemySign]
+	}
+	switch enemySign + ourPoints {
+	case "AZ":
+		return paperSign
+	case "AX":
+		return scisorsSign
+	case "BZ":
+		return scisorsSign
+	case "BX":
+		return rockSign
+	case "CZ":
+		return rockSign
+	case "CX":
+		return paperSign
+	}
+	return ""
 }
