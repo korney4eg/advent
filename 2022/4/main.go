@@ -14,7 +14,7 @@ type ElveRange struct {
 }
 
 func main() {
-	file, err := os.Open("input.txt")
+	file, err := os.Open("test.txt")
 
 	if err != nil {
 		log.Fatalf("failed to open")
@@ -58,6 +58,5 @@ func getElvesRanges(line string) (*ElveRange, *ElveRange) {
 }
 
 func isOverlapping(first, second *ElveRange) bool {
-	return (first.min <= second.min && first.max >= second.max) ||
-		(first.min >= second.min && first.max <= second.max)
+	return first.min <= second.max && first.max >= second.min
 }
