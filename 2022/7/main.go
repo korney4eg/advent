@@ -3,33 +3,10 @@ package main
 import (
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 )
-
-var input = `$ cd /
-$ ls
-dir a
-14848514 b.txt
-8504156 c.dat
-dir d
-$ cd a
-$ ls
-dir e
-29116 f
-2557 g
-62596 h.lst
-$ cd e
-$ ls
-584 i
-$ cd ..
-$ cd ..
-$ cd d
-$ ls
-4060174 j
-8033020 d.log
-5626152 d.ext
-7214296 k`
 
 type command struct {
 	command  string
@@ -47,6 +24,9 @@ type node struct {
 
 var rootFolder = &node{name: "/", nodeType: "dir"}
 
+const diskSize = 70000000
+const updateSize = 30000000
+
 func main() {
 	input, err := os.ReadFile("input.txt")
 	if err != nil {
@@ -61,11 +41,18 @@ func main() {
 	}
 	_ = rootFolder.setSize()
 	rootFolder.draw("")
-	fmt.Println(rootFolder.sumFoldersSmallerThen(100000))
+	spaceUsed := rootFolder.size
+	spaceAvailable := diskSize - spaceUsed
+	minFolderSize := updateSize - spaceAvailable
+	fmt.Println("space available: ", spaceAvailable)
+	fmt.Println("need for update: ", updateSize)
+	fmt.Println("minimum folder size: ", minFolderSize)
+	sizes := rootFolder.findSizeOfFolderToDelete(minFolderSize)
+	sort.Ints(sizes)
+	fmt.Println("need to remove folder size: ", sizes[0])
 }
 
 func runCommand(cwd *node, cmd command) *node {
-	fmt.Println("command: ", cmd.command)
 	if cmd.command == "ls" {
 		cwd.children = runLsCommand(cwd, cmd.outputs)
 		return cwd
@@ -74,8 +61,8 @@ func runCommand(cwd *node, cmd command) *node {
 		return cwd.find(cmd.argument)
 	}
 	return nil
-
 }
+
 func (n *node) setSize() int {
 	if n.nodeType == "dir" {
 		totalSize := 0
@@ -86,7 +73,6 @@ func (n *node) setSize() int {
 		return totalSize
 	}
 	return n.size
-
 }
 
 func (n *node) draw(indent string) {
@@ -111,12 +97,41 @@ func (n *node) sumFoldersSmallerThen(limit int) int {
 	return sum
 }
 
+func (n *node) didfoundNeededSizeFolder(minFolderSize int) bool {
+	if n.nodeType == "dir" && n.size == minFolderSize {
+		return true
+	}
+	return false
+}
+
+func (n *node) getSubfolders() (subFolders []*node) {
+	if n.nodeType == "dir" {
+		for _, child := range n.children {
+			if child.nodeType == "dir" {
+				subFolders = append(subFolders, child)
+			}
+		}
+	}
+	return subFolders
+}
+
+func (n *node) findSizeOfFolderToDelete(minFolderSize int) (folderSizes []int) {
+	if n.nodeType == "dir" && n.size >= minFolderSize {
+		folderSizes = append(folderSizes, n.size)
+		for _, child := range n.children {
+			folderSizes = append(folderSizes, child.findSizeOfFolderToDelete(minFolderSize)...)
+		}
+
+	}
+
+	return folderSizes
+}
+
 func runLsCommand(cwd *node, outputs []string) (nodes []*node) {
 	for _, output := range outputs {
 		if output == "" {
 			continue
 		}
-		fmt.Println(output)
 		typeOrSize := strings.Split(output, " ")[0]
 		nodeName := strings.Split(output, " ")[1]
 		newNode := &node{name: nodeName, parent: cwd}
@@ -127,7 +142,6 @@ func runLsCommand(cwd *node, outputs []string) (nodes []*node) {
 			nodeSize, _ := strconv.Atoi(typeOrSize)
 			newNode.size = nodeSize
 		}
-		fmt.Printf("new node: '%+v'\n", newNode)
 		nodes = append(nodes, newNode)
 	}
 
