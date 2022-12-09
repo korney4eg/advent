@@ -64,7 +64,7 @@ func main() {
 				height:      row[columnIndex],
 			}
 
-			newTreeScore := getTreeScore(tree, forest)
+			newTreeScore := getTreeScore(&tree, &forest)
 
 			if newTreeScore > threeScore {
 				threeScore = newTreeScore
@@ -77,7 +77,7 @@ func main() {
 	fmt.Println(threeScore)
 }
 
-func getTreeScore(tree Tree, forest [][]int) int {
+func getTreeScore(tree *Tree, forest *[][]int) int {
 	treeHeight := tree.height
 	treeRowIndex := tree.rowIndex
 	treeColumnIndex := tree.columnIndex
@@ -95,13 +95,13 @@ func getTreeScore(tree Tree, forest [][]int) int {
 	leftScore := 0
 
 	// move down
-	for rowIndex := treeRowIndex + 1; rowIndex < len(forest); rowIndex++ {
+	for rowIndex := treeRowIndex + 1; rowIndex < len(*forest); rowIndex++ {
 		if isBottomFinished {
 			break
 		}
 		bottomScore++
 
-		isBottomFinished = forest[rowIndex][treeColumnIndex] >= treeHeight
+		isBottomFinished = (*forest)[rowIndex][treeColumnIndex] >= treeHeight
 	}
 
 	// move up
@@ -111,10 +111,10 @@ func getTreeScore(tree Tree, forest [][]int) int {
 		}
 		topScore++
 
-		isTopFinished = forest[rowIndex][treeColumnIndex] >= treeHeight
+		isTopFinished = (*forest)[rowIndex][treeColumnIndex] >= treeHeight
 	}
 
-	row := forest[treeRowIndex]
+	row := (*forest)[treeRowIndex]
 
 	// move right
 	for columnIndex := treeColumnIndex + 1; columnIndex < len(row); columnIndex++ {
