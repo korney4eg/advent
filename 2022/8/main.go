@@ -52,83 +52,89 @@ func main() {
 		forest = append(forest, newLine)
 	}
 
-	visibleTreesCount := 0
+	threeScore := 0
 
 	for rowIndex := 0; rowIndex < len(forest); rowIndex++ {
 		row := forest[rowIndex]
 
-		if rowIndex == 0 || (rowIndex == len(forest)-1) {
-			visibleTreesCount += len(row)
-			continue
-		}
-
 		for columnIndex := 0; columnIndex < len(row); columnIndex++ {
-			if columnIndex == 0 || (columnIndex == len(row)-1) {
-				visibleTreesCount++
-				continue
-			}
-
 			tree := Tree{
 				rowIndex:    rowIndex,
 				columnIndex: columnIndex,
 				height:      row[columnIndex],
 			}
 
-			if !getIsHiddenTree(tree, forest) {
-				visibleTreesCount++
+			newTreeScore := getTreeScore(tree, forest)
+
+			if newTreeScore > threeScore {
+				threeScore = newTreeScore
 			}
+
 		}
 
 	}
 
-	fmt.Printf("%v", forest)
-	fmt.Printf("%v", visibleTreesCount)
+	fmt.Println(threeScore)
 }
 
-func getIsHiddenTree(tree Tree, forest [][]int) bool {
+func getTreeScore(tree Tree, forest [][]int) int {
 	treeHeight := tree.height
 	treeRowIndex := tree.rowIndex
 	treeColumnIndex := tree.columnIndex
 
-	isTopCover := false
-	isRightCover := false
-	isBottomCover := false
-	isLeftCover := false
+	isTopFinished := false
+	topScore := 0
 
-	for rowIndex := 0; rowIndex < len(forest); rowIndex++ {
-		row := forest[rowIndex]
+	isRightFinished := false
+	rightScore := 0
 
-		for columnIndex := 0; columnIndex < len(row); columnIndex++ {
-			isCurrentTreeRow := rowIndex == treeRowIndex
-			isCurrentTreeColumn := columnIndex == treeColumnIndex
-			isCurrentTree := isCurrentTreeRow && isCurrentTreeColumn
+	isBottomFinished := false
+	bottomScore := 0
 
-			// skip current tree
-			if isCurrentTree {
-				continue
-			}
+	isLeftFinished := false
+	leftScore := 0
 
-			// skip non tree row AND column
-			if !isCurrentTreeRow && !isCurrentTreeColumn {
-				continue
-			}
-
-			candidateTreeHeight := forest[rowIndex][columnIndex]
-
-			if !isTopCover {
-				isTopCover = rowIndex < treeRowIndex && candidateTreeHeight >= treeHeight
-			}
-			if !isBottomCover {
-				isBottomCover = rowIndex > treeRowIndex && candidateTreeHeight >= treeHeight
-			}
-			if !isLeftCover {
-				isLeftCover = columnIndex < treeColumnIndex && candidateTreeHeight >= treeHeight
-			}
-			if !isRightCover {
-				isRightCover = columnIndex > treeColumnIndex && candidateTreeHeight >= treeHeight
-			}
+	// move down
+	for rowIndex := treeRowIndex + 1; rowIndex < len(forest); rowIndex++ {
+		if isBottomFinished {
+			break
 		}
+		bottomScore++
+
+		isBottomFinished = forest[rowIndex][treeColumnIndex] >= treeHeight
 	}
 
-	return isTopCover && isRightCover && isBottomCover && isLeftCover
+	// move up
+	for rowIndex := treeRowIndex - 1; rowIndex >= 0; rowIndex-- {
+		if isTopFinished {
+			break
+		}
+		topScore++
+
+		isTopFinished = forest[rowIndex][treeColumnIndex] >= treeHeight
+	}
+
+	row := forest[treeRowIndex]
+
+	// move right
+	for columnIndex := treeColumnIndex + 1; columnIndex < len(row); columnIndex++ {
+		if isRightFinished {
+			break
+		}
+		rightScore++
+
+		isRightFinished = row[columnIndex] >= treeHeight
+	}
+
+	// move left
+	for columnIndex := treeColumnIndex - 1; columnIndex >= 0; columnIndex-- {
+		if isLeftFinished {
+			break
+		}
+		leftScore++
+
+		isLeftFinished = row[columnIndex] >= treeHeight
+	}
+
+	return topScore * rightScore * bottomScore * leftScore
 }
