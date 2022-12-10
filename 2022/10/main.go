@@ -11,6 +11,15 @@ import (
 var register = 1
 var cyclesCount = 0
 
+var monitor = []string{
+	"........................................",
+	"........................................",
+	"........................................",
+	"........................................",
+	"........................................",
+	"........................................",
+}
+
 type CommandResult struct {
 	cyclesCount   int
 	registerDelta int
@@ -24,50 +33,41 @@ func main() {
 		os.Exit(1)
 	}
 
-	//var commandList []string
-
 	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanLines)
 
-	sum := 0
-
 	for scanner.Scan() {
 		line := scanner.Text()
-
 		result := getResult(&line)
-		//fmt.Printf("%v\n", result)
-
-		//cyclesCount += result.cyclesCount
-
-		//fmt.Printf("%d\n", cyclesCount)
 
 		for i := 0; i < result.cyclesCount; i++ {
-			//fmt.Printf("%s\n", line)
+			lineIndex := cyclesCount / 40
+			pointIndex := cyclesCount % 40
 			cyclesCount++
 
-			if cyclesCount == 20 ||
-				cyclesCount == 60 ||
-				cyclesCount == 100 ||
-				cyclesCount == 140 ||
-				cyclesCount == 180 ||
-				cyclesCount == 220 {
-
-				sum += register * cyclesCount
-				//fmt.Printf("---> %d, %d\n", register*cyclesCount, register)
-			} else {
-				//fmt.Printf("%d, %d\n", cyclesCount, register)
+			if lineIndex > len(monitor)-1 {
+				break
 			}
+
+			monitorLineStr := monitor[lineIndex]
+
+			monitorLineArr := strings.Split(monitorLineStr, "")
+
+			if register-1 <= pointIndex && register+1 >= pointIndex {
+				monitorLineArr[pointIndex] = "#"
+			}
+
+			monitor[lineIndex] = strings.Join(monitorLineArr, "")
 
 			if i == 1 {
 				register += result.registerDelta
 			}
-
 		}
 
-		//commandList = append(commandList, line)
 	}
 
-	fmt.Printf(">>>> %d\n", sum)
+	draw(&monitor)
+	//fmt.Printf("%v\n", monitor)
 }
 
 func getResult(line *string) *CommandResult {
@@ -83,5 +83,19 @@ func getResult(line *string) *CommandResult {
 	return &CommandResult{
 		cyclesCount:   2,
 		registerDelta: registerDelta,
+	}
+}
+
+func getIsSuit(index int) bool {
+	if index < 0 {
+		return false
+	}
+
+	return index <= 39
+}
+
+func draw(data *[]string) {
+	for _, line := range *data {
+		fmt.Println(line)
 	}
 }
