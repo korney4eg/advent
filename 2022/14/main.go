@@ -20,8 +20,8 @@ func main() {
 			}
 
 		}
-		if sand.OutOfScreen {
-			log.Println(sandUnit)
+		if sand.X == maze.PouringX && sand.Y == maze.PouringY {
+			log.Println(sandUnit + 1)
 			break
 		}
 	}

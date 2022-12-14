@@ -36,10 +36,9 @@ func (s *Sand) Draw(maze *Maze) string {
 	return output
 }
 func (s *Sand) CanFallOneTile(maze *Maze) (canContinue bool) {
-	if s.Y == len(maze.Field)-1 || s.X == len(maze.Field[0])-1 {
-		s.OutOfScreen = true
-		return false
-	}
+	maze.MinX = int(math.Min(float64(maze.MinX), float64(s.X-1)))
+	maze.MaxX = int(math.Max(float64(maze.MaxX), float64(s.X+1)))
+
 	if maze.Field[s.Y+1][s.X] == "." {
 		s.Y = s.Y + 1
 		return true
@@ -69,6 +68,7 @@ func (m *Maze) addWallVector(beginVectorX, beginVectorY, endVectorX, endVectorY 
 	m.MinY = int(math.Min(float64(m.MinY), float64(minY)))
 	m.MaxX = int(math.Max(float64(m.MaxX), float64(maxX)))
 	m.MaxY = int(math.Max(float64(m.MaxY), float64(maxY)))
+
 	if beginVectorX == endVectorX {
 		for i := minY; i <= maxY; i++ {
 			m.Field[i][beginVectorX] = "#"
@@ -104,6 +104,7 @@ func (m *Maze) getMinMaxValues(lines []string) {
 	m.MinY = int(math.Min(float64(m.MinY), float64(PouringY)))
 	m.MaxX = int(math.Max(float64(m.MaxX), float64(PouringX)))
 	m.MaxY = int(math.Max(float64(m.MaxY), float64(PouringY)))
+	m.MaxY += 2
 }
 
 func (m *Maze) initiateField() {
@@ -111,8 +112,12 @@ func (m *Maze) initiateField() {
 
 	for y := 0; y <= m.MaxY; y++ {
 		mazeLine := []string{}
-		for x := 0; x <= m.MaxX; x++ {
-			mazeLine = append(mazeLine, ".")
+		element := "."
+		if y == m.MaxY {
+			element = "#"
+		}
+		for x := 0; x <= 999999; x++ {
+			mazeLine = append(mazeLine, element)
 		}
 		mazeLines = append(mazeLines, mazeLine)
 	}
