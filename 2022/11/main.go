@@ -10,7 +10,7 @@ import (
 )
 
 type test struct {
-	isDivisibleBy int
+	isDivisibleBy uint64
 	trueMonkeyID  int
 	falseMonkeyID int
 }
@@ -18,7 +18,7 @@ type test struct {
 type Monkey struct {
 	inspections int
 	id          int
-	items       []int
+	items       []uint64
 	operation   string
 	test        test
 }
@@ -31,12 +31,12 @@ func getMonkeyID(line string) int {
 
 }
 
-func getStartingItems(line string) (items []int) {
+func getStartingItems(line string) (items []uint64) {
 	itemsLine := strings.TrimPrefix(line, "  Starting items: ")
 	itemsList := strings.Split(itemsLine, ", ")
 	for _, item := range itemsList {
-		itemInt, _ := strconv.Atoi(item)
-		items = append(items, itemInt)
+		itemInt, _ := strconv.ParseInt(item, 10, 64)
+		items = append(items, uint64(itemInt))
 	}
 	return items
 }
@@ -48,7 +48,7 @@ func getOperation(line string) string {
 func getTest(lines []string) test {
 	t := test{}
 	testString := strings.TrimPrefix(lines[0], "  Test: divisible by ")
-	isDivisibleBy, err := strconv.Atoi(testString)
+	isDivisibleBy, err := strconv.ParseUint(testString, 10, 64)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -83,13 +83,13 @@ func getMonkeybyID(monkeys []*Monkey, id int) *Monkey {
 	return nil
 }
 
-func (m *Monkey) getWorryLevelAfteroperation(worryLevel int) int {
-	secondNumber := 0
+func (m *Monkey) getWorryLevelAfteroperation(worryLevel uint64) uint64 {
+	var secondNumber uint64
 	operations := strings.Split(m.operation, " ")
 	if operations[1] == "old" {
 		secondNumber = worryLevel
 	} else {
-		secondNumber, _ = strconv.Atoi(operations[1])
+		secondNumber, _ = strconv.ParseUint(operations[1], 10, 64)
 	}
 	switch operations[0] {
 	case "+":
@@ -104,44 +104,45 @@ func (m *Monkey) getWorryLevelAfteroperation(worryLevel int) int {
 	return 0
 }
 
-func (m *Monkey) choseMonkeyIDToThrowItem(worryLevel int) int {
+func (m *Monkey) choseMonkeyIDToThrowItem(worryLevel uint64) int {
 	if worryLevel%m.test.isDivisibleBy == 0 {
-		log.Printf("    Current worry level is divisible by %d.", m.test.isDivisibleBy)
-		log.Printf("    Item with worry level %d is thrown to monkey %d.", worryLevel, m.test.trueMonkeyID)
+		// log.Printf("    Current worry level is divisible by %d.", m.test.isDivisibleBy)
+		// log.Printf("    Item with worry level %d is thrown to monkey %d.", worryLevel, m.test.trueMonkeyID)
 		return m.test.trueMonkeyID
 	}
-	log.Printf("    Current worry level is not divisible by %d.", m.test.isDivisibleBy)
-	log.Printf("    Item with worry level %d is thrown to monkey %d.", worryLevel, m.test.falseMonkeyID)
+	// log.Printf("    Current worry level is not divisible by %d.", m.test.isDivisibleBy)
+	// log.Printf("    Item with worry level %d is thrown to monkey %d.", worryLevel, m.test.falseMonkeyID)
 	return m.test.falseMonkeyID
 }
 
-func (m *Monkey) throwItemToMonkey(itemWorryLevel int, monkey *Monkey) {
+func (m *Monkey) throwItemToMonkey(itemWorryLevel uint64, monkey *Monkey) {
 	monkey.items = append(monkey.items, itemWorryLevel)
 }
 
 func playRound(monkeys []*Monkey) {
 	for _, monkey := range monkeys {
-		log.Printf("Monkey %d:\n", monkey.id)
+		// log.Printf("Monkey %d:\n", monkey.id)
 		for _, item := range monkey.items {
-			log.Printf("  Monkey inspects an item with a worry level of %d.\n", item)
+			// log.Printf("  Monkey inspects an item with a worry level of %d.\n", item)
 			worryLevelAfterOperation := monkey.getWorryLevelAfteroperation(item)
-			log.Printf("    Worry level is '%s' to %d.", monkey.operation, worryLevelAfterOperation)
-			worryLevelAfterBoared := worryLevelAfterOperation / 3
-			log.Printf("    Monkey gets bored with item. Worry level is divided by 3 to %d.", worryLevelAfterBoared)
+			// log.Printf("    Worry level is '%s' to %d.", monkey.operation, worryLevelAfterOperation)
+			// worryLevelAfterBoared := worryLevelAfterOperation / 3
+			worryLevelAfterBoared := worryLevelAfterOperation
+			// log.Printf("    Monkey gets bored with item. Worry level is divided by 3 to %d.", worryLevelAfterBoared)
 			monkeyIDToThrow := monkey.choseMonkeyIDToThrowItem(worryLevelAfterBoared)
 			monkeyToThrow := getMonkeybyID(monkeys, monkeyIDToThrow)
 			monkey.throwItemToMonkey(worryLevelAfterBoared, monkeyToThrow)
 
 		}
 		monkey.inspections += len(monkey.items)
-		monkey.items = []int{}
+		monkey.items = []uint64{}
 	}
 
 }
-func monkeysOutpu(monkeys []*Monkey) string {
+func monkeysOutput(monkeys []*Monkey) string {
 	output := ""
 	for _, monkey := range monkeys {
-		output += fmt.Sprintf("Monkey %d(%d): %v\n", monkey.id, monkey.inspections, monkey.items)
+		output += fmt.Sprintf("Monkey %d inspected items %d times:%v\n", monkey.id, monkey.inspections, monkey.items)
 	}
 	return output
 
@@ -160,7 +161,7 @@ func getMonkeyBusiness(monkeys []*Monkey) int {
 
 func main() {
 	log.SetFlags(log.Flags() &^ (log.Ldate | log.Ltime))
-	file, err := os.ReadFile("input.txt")
+	file, err := os.ReadFile("test.txt")
 
 	if err != nil {
 		log.Fatal(err)
@@ -172,10 +173,13 @@ func main() {
 		monkey.readFromString(monkeyString)
 		monkeys = append(monkeys, monkey)
 	}
-	for i := 0; i < 20; i++ {
+	for i := 0; i < 10000; i++ {
 		playRound(monkeys)
+		if i < 25 || (i+1)%1000 == 0 {
+			log.Printf("== After round %d ==", i+1)
+			log.Println(monkeysOutput(monkeys))
+		}
 	}
-	log.Println(monkeysOutpu(monkeys))
 	log.Println(getMonkeyBusiness(monkeys))
 
 }
