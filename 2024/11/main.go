@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"slices"
 	"strconv"
 	"strings"
 )
@@ -36,8 +35,10 @@ func proceed(num int) (result []int) {
 
 }
 
-func blink(input []int) (result []int) {
-	for _, num := range input {
+func blink(input map[int]int) (result map[int]int) {
+	result = map[int]int{}
+	// newMap := map[int]int{}
+	for num := range input {
 		newList := []int{}
 		hits++
 		res, ok := cache[num]
@@ -48,32 +49,36 @@ func blink(input []int) (result []int) {
 		} else {
 			newList = res
 		}
-
-		result = append(result, newList...)
+		for _, n := range newList {
+			result[n] += input[num]
+		}
 
 	}
-	// slices.Sort(result)
 	return result
 }
 
 func task1(input string) int {
 	stonesList := strings.Split(input, " ")
-	stones := []int{}
+	stones := map[int]int{}
 	for _, stone := range stonesList {
 		operations++
 		s, _ := strconv.Atoi(stone)
-		stones = append(stones, s)
+		stones[s]++
 	}
 	nums := 25
 	for i := 0; i < nums; i++ {
 		stones = blink(stones)
 		// log.Println(stones)
-		log.Println(i, "/", nums)
-		log.Println("miss rate", misses, "/", hits, "=", float64(misses)/float64(hits))
-		log.Println("operations", operations)
+		// log.Println(i, "/", nums)
+		// log.Println("miss rate", misses, "/", hits, "=", float64(misses)/float64(hits))
+		// log.Println("operations", operations)
 
 	}
-	return len(stones)
+	total := 0
+	for _, v := range stones {
+		total += v
+	}
+	return total
 }
 
 func main() {
