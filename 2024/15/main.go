@@ -10,11 +10,9 @@ type position struct {
 	x, y int
 }
 
-var field = [][]string{}
-var instructions = []string{}
 var robot = position{}
 
-func parseInput(input string) {
+func parseInput(input string) (field [][]string, instructions []string) {
 	isInstructions := false
 	lines := strings.Split(input, "\n")
 	for y, line := range lines {
@@ -33,10 +31,41 @@ func parseInput(input string) {
 			}
 		}
 	}
+	return field, instructions
+
+}
+func parseInputWide(input string) (field [][]string, instructions []string) {
+	isInstructions := false
+	lines := strings.Split(input, "\n")
+	for y, line := range lines {
+		if line == "" {
+			isInstructions = true
+			continue
+		}
+		if isInstructions {
+			instructions = append(instructions, strings.Split(line, "")...)
+		} else {
+			l := []string{}
+			for _, cell := range line {
+				stringedCell := string(cell)
+				if stringedCell == "O" {
+					l = append(l, "[", "]")
+				} else if stringedCell == "@" {
+					robot.x = len(l)
+					robot.y = y
+					l = append(l, "@", ".")
+				} else {
+					l = append(l, stringedCell, stringedCell)
+				}
+			}
+			field = append(field, l)
+		}
+	}
+	return field, instructions
 
 }
 
-func renderField() {
+func renderField(field [][]string) {
 	output := "\n\n"
 	for _, line := range field {
 		output += strings.Join(line, "") + "\n"
@@ -44,7 +73,7 @@ func renderField() {
 	log.Println(output)
 }
 
-func calculateGPS() int {
+func calculateGPS(field [][]string) int {
 	total := 0
 	for y, line := range field {
 		for x, cell := range line {
@@ -56,7 +85,7 @@ func calculateGPS() int {
 	return total
 }
 
-func move(x, y int, instruction string) bool {
+func canMove(x, y int, instruction string, field [][]string) bool {
 	dx, dy := 0, 0
 	switch instruction {
 	case "^":
@@ -68,73 +97,83 @@ func move(x, y int, instruction string) bool {
 	case ">":
 		dx = 1
 	}
-	log.Println("move", x, y, instruction)
-	previous := field[y][x]
 	if field[y+dy][x+dx] == "." {
-		field[y][x] = "."
-		field[y+dy][x+dx] = previous
-		if previous == "@" {
-			robot.x += dx
-			robot.y += dy
-		}
 		return true
 	}
 	if field[y+dy][x+dx] == "#" {
 		return false
 	}
 	if field[y+dy][x+dx] == "O" {
-		canMove := move(x+dx, y+dy, instruction)
-		if canMove {
-			field[y][x] = "."
-			field[y+dy][x+dx] = previous
-			if previous == "@" {
-				robot.x += dx
-				robot.y += dy
-			}
-		}
+		canMove := canMove(x+dx, y+dy, instruction, field)
 		return canMove
 	}
-
+	if dy == 0 && (field[y+dy][x+dx] == "[" || field[y+dy][x+dx] == "]") {
+		canMove := canMove(x+dx, y+dy, instruction, field)
+		return canMove
+	}
 	return false
 }
 
-func task1() int {
-	for _, instruction := range instructions {
-		_ = move(robot.x, robot.y, instruction)
+func move(x, y int, instruction string, field [][]string) {
+	dx, dy := 0, 0
+	switch instruction {
+	case "^":
+		dy = -1
+	case "v":
+		dy = 1
+	case "<":
+		dx = -1
+	case ">":
+		dx = 1
 	}
-	renderField()
-	return calculateGPS()
+	log.Println("move", x, y, field[y][x], instruction)
+	for true {
+		newX := x + dx
+		newY := y + dy
+		if field[newY][newX] == "." {
+		}
+	}
+	previous := field[y][x]
+	if field[y+dy][x+dx] == "." {
+		field[y+dy][x+dx] = previous
+		field[y][x] = "."
+		if previous == "@" {
+			robot.x += dx
+			robot.y += dy
+		}
+	} else {
+		move(x+dx, y+dy, instruction, field)
+	}
 }
 
+func task1(field [][]string, instructions []string) int {
+	for _, instruction := range instructions {
+		if canMove(robot.x, robot.y, instruction, field) {
+			move(robot.x, robot.y, instruction, field)
+		}
+	}
+	renderField(field)
+	return calculateGPS(field)
+}
+
+func task2(field [][]string, instructions []string) int {
+	for _, instruction := range instructions {
+		if canMove(robot.x, robot.y, instruction, field) {
+			renderField(field)
+			move(robot.x, robot.y, instruction, field)
+		}
+	}
+	return 0
+}
 func main() {
-	file, err := os.ReadFile("2024/15/input.txt")
+	file, err := os.ReadFile("2024/15/test2.txt")
 
 	if err != nil {
 		log.Fatalf("failed to open")
 	}
 
 	input := string(file)
-	_ = `##########
-#..O..O.O#
-#......O.#
-#.OO..O.O#
-#..O@..O.#
-#O#..O...#
-#O..O..O.#
-#.OO.O.OO#
-#....O...#
-##########
-
-<vv>^<v^>v>^vv^v>v<>v^v<v<^vv<<<^><<><>>v<vvv<>^v^>^<<<><<v<<<v^vv^v>^
-vvv<<^>^v^^><<>>><>^<<><^vv^^<>vvv<>><^^v>^>vv<>v<<<<v<^v>^<^^>>>^<v<v
-><>vv>v^v^<>><>>>><^^>vv>v<^^^>>v^v^<^^>v^^>v^<^v>v<>>v^v^<v>v^^<^^vv<
-<<v<^>>^^^^>>>v^<>vvv^><v<<<>^^^vv^<vvv>^>v<^^^^v<>^>vvvv><>>v^<<^^^^^
-^><^><>>><>^^<<^^v>>><^<v>^<vv>>v>>>^v><>^v><<<<v>>v<v<v>vvv>^<><<>^><
-^>><>^v<><^vvv<^^<><v<<<<<><^v<<<><<<^^<v<^^^><^>>^<v^><<<^>>^v<v^v<v^
->^>>^v>vv>^<<^v<>><<><<v<<v><>v<^vv<<<>^^v^>^^>>><<^v>>v^v><^^>>^<>vv^
-<><^^>^^^<><vvvvv^v<v<<>^v<v>v<<^><<><<><<<^^<<<^<<>><<><^^^>^^<>^>v<>
-^^>vv<^v^v<vv>^<><v<^v>^^^>>>^^vvv^>vvv<>>>^<^>>>>>^<<^v>^vvv<>^<><<v>
-v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^`
-	parseInput(input)
-	log.Println("task1: ", task1())
+	field, instructions := parseInputWide(input)
+	// log.Println("task1: ", task1(field, instructions))
+	log.Println("task2: ", task2(field, instructions))
 }
